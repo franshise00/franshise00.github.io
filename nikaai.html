@@ -49,6 +49,8 @@
   .fb-btn:hover { background: rgba(255,255,255,.14); }
   .fb-mark { min-width: 44px; height: 32px; padding: 0 10px; border-radius: 35px; background: var(--grad); display: grid; place-items: center;
     font-weight: 800; font-size: 14px; letter-spacing: .02em; color: #fff; }
+  .fb-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+  @media (max-width: 620px) { .fb-name { max-width: 120px; font-size: 14px; } }
   .fb-btn svg { width: 12px; height: 12px; opacity: .7; transition: transform .15s; }
   .fb-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
   .fb-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 260px; background: var(--card); color: var(--text);
@@ -152,6 +154,9 @@
   .picked .ic { width: 42px; height: 42px; border-radius: 12px; background: var(--grad); display: grid; place-items: center; flex: none; }
   .picked .ic svg { width: 20px; height: 20px; }
   .picked .grow { flex: 1; min-width: 0; }
+  .picked .link-btn + .link-btn { margin-left: 4px; }
+  .link-btn.muted-btn { color: var(--muted); }
+  .link-btn.muted-btn:hover { color: var(--text); }
   .picked .nm { font-weight: 700; overflow-wrap: anywhere; line-height: 1.3; }
   .picked .mt { color: var(--muted); font-size: 13px; }
   audio { display: block; width: 100%; height: 40px; margin-top: 10px; }
@@ -264,6 +269,7 @@
       <div class="project">
         <button class="fb-btn" id="fbBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Выбрать франшизу">
           <span class="fb-mark">FB</span>
+          <span class="fb-name" id="fbName">Перец жгучие туры</span>
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="fb-menu hidden" id="fbMenu" role="menu">
@@ -414,6 +420,7 @@
           <div class="ic"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4M6.5 5v10M10 2.5v15M13.5 5v10M17 8v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
           <div class="grow"><div class="nm" id="pickName"></div><div class="mt" id="pickMeta"></div></div>
           <button class="link-btn" type="button" id="replace">Заменить</button>
+          <button class="link-btn muted-btn" type="button" id="clearCall">Очистить</button>
         </div>
         <audio id="player" controls preload="metadata"></audio>
       </div>
@@ -1424,6 +1431,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       var t = b.querySelector(".tick"); if (t) t.classList.toggle("hidden", !on);
     });
     document.querySelectorAll(".js-franchise").forEach(function (el) { el.textContent = "Франшиза: " + name; });
+    $("fbName").textContent = name; $("fbBtn").title = "Франшиза: " + name + ". Нажмите, чтобы сменить";
     state.prevProject = state.project.id;
     state.project = { id: id, name: name };
     store.set("nika_project", id);
@@ -1885,6 +1893,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     $("analyze").disabled = b || !call.file;
     $("analyze").textContent = b ? "Анализирую…" : "Проанализировать";
     $("replace").disabled = b;
+    $("clearCall").disabled = b;
   }
   function showCallErr(msg, withRetry) {
     var box = $("callErr");
@@ -2011,7 +2020,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   });
-  $("newCall").addEventListener("click", function () {
+  function resetCall() {
     if (call.busy) return;
     if (call.url) URL.revokeObjectURL(call.url);
     call.file = null; call.url = null; call.sig = ""; call.duration = 0; call.analysis = null; call.transcript = "";
@@ -2019,8 +2028,11 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     drop.classList.remove("hidden"); $("pickedBox").classList.add("hidden");
     $("steps").classList.add("hidden"); $("callResult").classList.add("hidden"); hideCallErr();
     $("analyze").disabled = true;
+    $("callMsg").textContent = ""; $("trText").classList.add("hidden"); $("trText").textContent = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  }
+  $("newCall").addEventListener("click", resetCall);
+  $("clearCall").addEventListener("click", resetCall);
   $("trBtn").addEventListener("click", function () {
     if (!call.uploaded) return;
     var btn = $("trBtn"), sig = call.uploadedFor, t0 = Date.now();
