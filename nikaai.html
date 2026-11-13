@@ -227,6 +227,23 @@
   .r-meta { margin-top: 14px; font-size: 12px; color: var(--muted); }
   @media (max-width: 620px) { .kv, .chk { grid-template-columns: 1fr; } .r-top .page-title { font-size: 19px; } }
 
+  /* разбор звонка: главное сверху, остальное в свёрнутых блоках */
+  .r-client h2 { font-size: 22px; }
+  .r-client .occ { margin: 4px 0 0; }
+  .need { margin-top: 14px; background: var(--accent-soft); border-radius: 14px; padding: 12px 14px; font-size: 16px; font-weight: 600; line-height: 1.5; }
+  .r-client .r-lead { font-size: 15px; margin: 14px 0 4px; }
+  details.more { margin-top: 12px; }
+  details.more > summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; list-style: none; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary::before { content: "▸ "; }
+  details.more[open] > summary::before { content: "▾ "; }
+  details.acc > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  details.acc > summary::-webkit-details-marker { display: none; }
+  details.acc > summary h2 { margin: 0; display: flex; align-items: center; gap: 8px; }
+  details.acc > summary::after { content: "+"; font-size: 22px; font-weight: 500; color: var(--muted); line-height: 1; flex: none; }
+  details.acc[open] > summary::after { content: "−"; }
+  details.acc[open] > summary { margin-bottom: 12px; }
+  .acc .cnt { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 20px; padding: 2px 9px; }
   .gate { max-width: 440px; margin: 48px auto; }
   .hidden { display: none !important; }
   .muted { color: var(--muted); }
@@ -259,8 +276,8 @@
       </div>
     </div>
     <nav class="tabs" id="tabs">
-      <button data-tab="contract" class="on">Договор</button>
-      <button data-tab="call">Анализ звонка</button>
+      <button data-tab="call" class="on">Анализ звонка</button>
+      <button data-tab="contract">Договор</button>
       <button data-tab="base">База продажника <span class="soon">скоро</span></button>
     </nav>
   </div>
@@ -1149,7 +1166,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   function unknown(v) { var s = str(v).toLowerCase(); return !s || s === "не прозвучало" || s === "—" || s === "-" || s === "нет данных"; }
 
   var CLIENT_ROWS = [
-    ["name", "Имя"], ["city", "Город"], ["occupation", "Чем занимается"], ["budget", "Деньги"], ["money_source", "Откуда деньги"],
+    ["name", "Имя"], ["city", "Город"], ["occupation", "Чем занимается"], ["need", "Потребность"], ["budget", "Деньги"], ["money_source", "Откуда деньги"],
     ["why_business", "Почему бизнес"], ["interest", "Чем заинтересовала сфера"], ["timing", "Когда открываться"],
     ["decision_maker", "Кто решает"], ["next_touch", "Следующее касание"], ["extra", "Ещё запомнилось"]
   ];
@@ -1162,17 +1179,33 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   var TEMP = { "горячий": "hot", "тёплый": "warm", "теплый": "warm", "холодный": "cold" };
 
   /** Готовый комментарий о клиенте для CRM. */
-  function crmComment(a) {
+  function crmComment(a, o) {
     a = a || {};
-    var cl = a.client || {}, L = [];
-    var head = [cl.name, cl.city].filter(function (v) { return !unknown(v); }).map(str).join(", ");
+    var cl = a.client || {}, L = [], nx = nextName(o);
+    function v(k) { return unknown(cl[k]) ? "не прозвучало" : str(cl[k]); }
+    var head = [cl.name, cl.city].filter(function (x) { return !unknown(x); }).map(str).join(", ");
     if (head) L.push(head);
-    CRM_ROWS.forEach(function (r) { L.push(r[1] + ": " + (unknown(cl[r[0]]) ? "не прозвучало" : str(cl[r[0]]))); });
-    var mv = arr(a.motives).map(function (m) { return str(m.motive); }).filter(Boolean);
-    if (mv.length) L.push("Мотивы: " + mv.join("; "));
-    var qs = arr(a.client_questions).map(str).filter(Boolean);
-    if (qs.length) L.push("Вопросы клиента: " + qs.join("; "));
-    if (a.temperature) L.push("Температура: " + str(a.temperature));
+    L.push("Чем занимается: " + v("occupation"));
+    L.push("Потребность: " + v("need"));
+    L.push("Деньги: " + v("budget") + (unknown(cl.money_source) ? "" : " (" + str(cl.money_source) + ")"));
+    L.push("Когда открываться: " + v("timing"));
+    if (!unknown(cl.decision_maker)) L.push("Кто решает: " + str(cl.decision_maker));
+    var cq = arr(a.client_questions).map(str).filter(Boolean);
+    L.push("", "Вопросы клиента:");
+    if (cq.length) cq.forEach(function (q) { L.push("— " + q); }); else L.push("— не задавал");
+    var ob = arr(a.objections).filter(function (x) { return str(x.objection); });
+    if (ob.length) {
+      L.push("", "Основные возражения:");
+      ob.forEach(function (x) { L.push("— " + str(x.objection) + (x.status ? " (" + x.status + ")" : "")); });
+    }
+    var qs = arr(a.questions).filter(function (x) { return str(x.question); });
+    if (qs.length) {
+      L.push("", "Вопросы к " + nx + ":");
+      qs.forEach(function (x, i) { L.push((i + 1) + ". " + str(x.question)); });
+    }
+    if (str(a.urgency)) L.push("", "Срочность: " + str(a.urgency));
+    L.push("", "Следующее касание: " + v("next_touch"));
+    if (!unknown(cl.extra)) L.push("Доп.: " + str(cl.extra));
     return L.join("\n");
   }
 
@@ -1182,21 +1215,14 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   // ---------------------------------------------------------------- текст / markdown
   function toMarkdown(a, meta) {
     a = a || {}; meta = meta || {};
-    var L = [], fb = a.feedback || {}, nx = nextName(meta);
+    var L = [], fb = a.feedback || {}, nx = nextName(meta), cl = a.client || {};
     L.push("# Анализ звонка" + (meta.filename ? " — " + meta.filename : ""));
     L.push([meta.date, meta.project ? "Проект: " + meta.project : "", meta.stageName ? "Этап: " + meta.stageName : "", a.temperature ? "Клиент: " + a.temperature : ""].filter(Boolean).join(" · "));
-    L.push("", "## Итог", str(a.summary));
-    if (a.temperature) L.push("", "_Температура: " + a.temperature + (a.temperature_reason ? " — " + str(a.temperature_reason) : "") + "_");
-    L.push("", "## Мотивы клиента");
-    arr(a.motives).forEach(function (m) {
-      L.push("- **" + str(m.motive) + "**" + (str(m.quote) ? " — «" + unq(m.quote) + "»" : "") + (str(m.how) ? "\n  Как опереться: " + str(m.how) : ""));
-    });
-    L.push("", "## Комментарий в CRM", "", "```", crmComment(a), "```");
-    if (arr(a.client_questions).length) {
-      L.push("", "## Вопросы клиента — ответить на " + nx);
-      arr(a.client_questions).forEach(function (q) { L.push("- " + str(q)); });
-    }
-    L.push("", "## 5 вопросов для раскрытия потребности на " + nx);
+    L.push("", "## Клиент и потребность");
+    L.push("**Потребность:** " + (unknown(cl.need) ? "не прозвучало" : str(cl.need)));
+    if (str(a.summary)) L.push("", str(a.summary));
+    L.push("", "```", crmComment(a, meta), "```");
+    L.push("", "## 5 вопросов к " + nx);
     arr(a.questions).forEach(function (q, i) { L.push((i + 1) + ". **" + str(q.question) + "**" + (q.why ? " — " + str(q.why) : "")); });
     L.push("", "## 3 главных возражения");
     if (!arr(a.objections).length) L.push("Возражений не выявлено.");
@@ -1204,8 +1230,19 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       L.push("", "### " + (i + 1) + ". " + str(o.objection) + (o.status ? " (" + o.status + ")" : ""));
       if (str(o.quote)) L.push("> «" + unq(o.quote) + "»");
       L.push("**Отработка:** " + str(o.answer));
-      if (str(o.source)) L.push("_Источник: " + str(o.source) + "_");
+      if (str(o.source)) L.push("_Основа: " + str(o.source) + "_");
     });
+    if (arr(a.client_questions).length) {
+      L.push("", "## Вопросы клиента — ответить на " + nx);
+      arr(a.client_questions).forEach(function (q) { L.push("- " + str(q)); });
+    }
+    if (str(a.urgency)) L.push("", "## Срочность для закрытия на " + nx, str(a.urgency));
+    if (arr(a.motives).length) {
+      L.push("", "## Мотивы клиента");
+      arr(a.motives).forEach(function (m) {
+        L.push("- **" + str(m.motive) + "**" + (str(m.quote) ? " — «" + unq(m.quote) + "»" : "") + (str(m.how) ? "\n  Как опереться: " + str(m.how) : ""));
+      });
+    }
     L.push("", "## Рекомендации по звонку");
     if (str(fb.summary)) L.push(str(fb.summary));
     if (arr(fb.good).length) { L.push("", "**Что получилось:**"); arr(fb.good).forEach(function (x) { L.push("- " + str(x)); }); }
@@ -1226,68 +1263,79 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     return items.length ? '<ul class="' + cls + '">' + items.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : '<p class="muted small">—</p>';
   }
 
+  function acc(title, count, body, open) {
+    return '<details class="card acc"' + (open ? " open" : "") + '><summary><h2>' + title +
+      (count ? '<span class="cnt">' + count + "</span>" : "") + "</h2></summary>" + body + "</details>";
+  }
+
   function renderHtml(a, o) {
     a = a || {}; o = o || {};
     var cl = a.client || {}, fb = a.feedback || {}, nx = esc(nextName(o));
     var t = TEMP[str(a.temperature).toLowerCase()] || "";
     var h = [];
 
-    h.push('<div class="card r-sum">');
+    // 1. Клиент и его потребность
+    var who = [cl.name, cl.city].filter(function (x) { return !unknown(x); }).map(str).join(", ") || "Клиент";
+    h.push('<div class="card r-client">');
     h.push('<div class="r-badges">' +
       (a.temperature ? '<span class="temp ' + t + '"><i></i>' + esc(cap(a.temperature)) + " клиент</span>" : "") +
       (o.stageName ? '<span class="pill">' + esc(o.stageName) + "</span>" : "") + "</div>");
-    h.push('<p class="r-lead">' + esc(a.summary) + "</p>");
+    h.push('<div class="card-h"><h2>' + esc(who) + '</h2><button class="btn sm" type="button" data-copy-crm>Скопировать для CRM</button></div>');
+    if (!unknown(cl.occupation)) h.push('<p class="muted small occ">' + esc(cl.occupation) + "</p>");
+    h.push('<div class="need"><span class="ans-l">Потребность</span>' + (unknown(cl.need) ? "не прозвучало — выяснить на " + nx : esc(cl.need)) + "</div>");
+    if (str(a.summary)) h.push('<p class="r-lead">' + esc(a.summary) + "</p>");
     if (a.temperature_reason) h.push('<p class="muted small">' + esc(a.temperature_reason) + "</p>");
-    h.push("</div>");
-
-    if (arr(a.motives).length) {
-      h.push('<div class="card"><h2>Мотивы клиента</h2><p class="sub">Ради чего он смотрит бизнес — на это опираемся на ' + nx + '.</p><ul class="mv">');
-      arr(a.motives).forEach(function (m) {
-        h.push("<li><b>" + esc(m.motive) + "</b>" + (str(m.quote) ? "<span>«" + esc(unq(m.quote)) + "»</span>" : "") +
-          (str(m.how) ? '<em class="how">Как опереться: ' + esc(m.how) + "</em>" : "") + "</li>");
-      });
-      h.push("</ul></div>");
-    }
-
-    h.push('<div class="card"><div class="card-h"><h2>Клиент</h2><button class="btn sm" type="button" data-copy-crm>Скопировать для CRM</button></div><dl class="kv">');
+    h.push('<details class="more"><summary>Все данные о клиенте</summary><dl class="kv">');
     CLIENT_ROWS.forEach(function (r) {
+      if (["name", "city", "occupation", "need"].indexOf(r[0]) !== -1) return;
       var v = cl[r[0]], u = unknown(v);
       h.push("<div><dt>" + r[1] + "</dt><dd" + (u ? ' class="muted"' : "") + ">" + (u ? "не прозвучало" : esc(v)) + "</dd></div>");
     });
-    h.push("</dl></div>");
+    h.push("</dl></details></div>");
 
-    var cq = arr(a.client_questions).map(str).filter(Boolean);
-    if (cq.length) h.push('<div class="card"><h2>Вопросы клиента</h2><p class="sub">Клиент спрашивал — подготовьте ответы к ' + nx + '.</p>' + list(cq, "cq") + "</div>");
-
-    h.push('<div class="card"><h2>5 вопросов для раскрытия потребности</h2><p class="sub">Дополнительно к скрипту — задайте на ' + nx + ', чтобы глубже понять клиента.</p><ol class="qs">');
+    // 2. Вопросы к следующему этапу
+    h.push('<div class="card"><h2>5 вопросов к ' + nx + '</h2><p class="sub">Дополнительно к скрипту — помогут глубже раскрыть потребность.</p><ol class="qs">');
     arr(a.questions).forEach(function (q) { h.push("<li><b>" + esc(q.question) + "</b>" + (q.why ? "<span>" + esc(q.why) + "</span>" : "") + "</li>"); });
     h.push("</ol></div>");
 
-    h.push('<div class="card"><h2>3 главных возражения</h2><p class="sub">Прозвучавшие и скрытые — с готовой отработкой из вашей базы.</p>');
+    // 3. Возражения
+    h.push('<div class="card"><h2>3 главных возражения</h2><p class="sub">С отработкой под этого клиента.</p>');
     if (!arr(a.objections).length) h.push('<p class="muted">Возражений не выявлено.</p>');
     arr(a.objections).forEach(function (ob) {
       var heard = str(ob.status) === "прозвучало";
       h.push('<div class="obj"><div class="obj-h"><b>' + esc(ob.objection) + '</b><span class="st ' + (heard ? "heard" : "hidden-o") + '">' + esc(ob.status || "скрытое") + "</span></div>");
       if (str(ob.quote)) h.push("<blockquote>«" + esc(unq(ob.quote)) + "»</blockquote>");
       h.push('<div class="ans"><span class="ans-l">Отработка</span>' + esc(ob.answer) + "</div>");
-      if (str(ob.source)) h.push('<div class="src">Источник: ' + esc(ob.source) + "</div>");
+      if (str(ob.source)) h.push('<div class="src">Основа: ' + esc(ob.source) + "</div>");
       h.push("</div>");
     });
     h.push("</div>");
 
-    h.push('<div class="card"><h2>Рекомендации по звонку</h2>');
-    if (str(fb.summary)) h.push("<p>" + esc(fb.summary) + "</p>");
-    h.push('<h3 class="fb-h g">Что получилось</h3>' + list(fb.good, "l-good"));
-    if (arr(fb.grow).length) {
-      h.push('<h3 class="fb-h">Что усилить в следующий раз</h3><ul class="grow">');
-      arr(fb.grow).forEach(function (g) {
-        h.push("<li><b>" + esc(g.point) + "</b>" + (str(g.say) ? '<div class="ans"><span class="ans-l">Можно сказать</span>«' + esc(unq(g.say)) + "»</div>" : "") + "</li>");
+    // Дальше — свёрнутые блоки
+    var cq = arr(a.client_questions).map(str).filter(Boolean);
+    if (cq.length) h.push(acc("Вопросы клиента", cq.length, '<p class="sub">Клиент спрашивал — подготовьте ответы к ' + nx + ".</p>" + list(cq, "cq")));
+    if (str(a.urgency)) h.push(acc("Срочность для закрытия", "", '<div class="ans"><span class="ans-l">Как подать на ' + nx + "</span>" + esc(a.urgency) + "</div>"));
+    if (arr(a.motives).length) {
+      var mv = ['<ul class="mv">'];
+      arr(a.motives).forEach(function (m) {
+        mv.push("<li><b>" + esc(m.motive) + "</b>" + (str(m.quote) ? "<span>«" + esc(unq(m.quote)) + "»</span>" : "") +
+          (str(m.how) ? '<em class="how">Как опереться: ' + esc(m.how) + "</em>" : "") + "</li>");
       });
-      h.push("</ul>");
+      mv.push("</ul>");
+      h.push(acc("Мотивы клиента", arr(a.motives).length, mv.join("")));
     }
-    h.push("</div>");
-
-    h.push('<div class="card"><h2>Следующие шаги</h2>' + list(a.next_steps, "steps") + "</div>");
+    var rec = [];
+    if (str(fb.summary)) rec.push("<p>" + esc(fb.summary) + "</p>");
+    rec.push('<h3 class="fb-h g">Что получилось</h3>' + list(fb.good, "l-good"));
+    if (arr(fb.grow).length) {
+      rec.push('<h3 class="fb-h">Что усилить в следующий раз</h3><ul class="grow">');
+      arr(fb.grow).forEach(function (g) {
+        rec.push("<li><b>" + esc(g.point) + "</b>" + (str(g.say) ? '<div class="ans"><span class="ans-l">Можно сказать</span>«' + esc(unq(g.say)) + "»</div>" : "") + "</li>");
+      });
+      rec.push("</ul>");
+    }
+    h.push(acc("Рекомендации по звонку", "", rec.join("")));
+    if (arr(a.next_steps).length) h.push(acc("Следующие шаги", arr(a.next_steps).length, list(a.next_steps, "steps")));
     return h.join("");
   }
   function cap(s) { s = str(s); return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1323,7 +1371,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
   // ---------------------------------------------------------------- вкладки
   var TABS = ["contract", "call", "base"];
-  var currentTab = TABS.indexOf(location.hash.slice(1)) !== -1 ? location.hash.slice(1) : "contract";
+  var currentTab = TABS.indexOf(location.hash.slice(1)) !== -1 ? location.hash.slice(1) : "call";
   document.querySelectorAll("#tabs button").forEach(function (b) {
     b.addEventListener("click", function () {
       selectTab(b.getAttribute("data-tab"));
@@ -1939,7 +1987,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   $("copyRes").addEventListener("click", function () { copyText(resultText(), $("copyRes")); });
   $("resBody").addEventListener("click", function (e) {
     var b = e.target.closest("[data-copy-crm]");
-    if (b && call.analysis) copyText(K.crmComment(call.analysis), b);
+    if (b && call.analysis) copyText(K.crmComment(call.analysis, call.meta), b);
   });
   function copyText(text, btn) {
     var fallback = function () {
