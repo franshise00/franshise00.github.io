@@ -1185,11 +1185,15 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     function v(k) { return unknown(cl[k]) ? "не прозвучало" : str(cl[k]); }
     var head = [cl.name, cl.city].filter(function (x) { return !unknown(x); }).map(str).join(", ");
     if (head) L.push(head);
-    L.push("Чем занимается: " + v("occupation"));
-    L.push("Потребность: " + v("need"));
-    L.push("Деньги: " + v("budget") + (unknown(cl.money_source) ? "" : " (" + str(cl.money_source) + ")"));
-    L.push("Когда открываться: " + v("timing"));
-    if (!unknown(cl.decision_maker)) L.push("Кто решает: " + str(cl.decision_maker));
+    var portrait = str(a.summary);
+    if (portrait) L.push(portrait);   // портрет клиента: чем занимается, почему бизнес, деньги, кто решает
+    else {
+      L.push("Чем занимается: " + v("occupation"));
+      L.push("Потребность: " + v("need"));
+      L.push("Деньги: " + v("budget") + (unknown(cl.money_source) ? "" : " (" + str(cl.money_source) + ")"));
+      L.push("Когда открываться: " + v("timing"));
+      if (!unknown(cl.decision_maker)) L.push("Кто решает: " + str(cl.decision_maker));
+    }
     var cq = arr(a.client_questions).map(str).filter(Boolean);
     L.push("", "Вопросы клиента:");
     if (cq.length) cq.forEach(function (q) { L.push("— " + q); }); else L.push("— не задавал");
@@ -1205,7 +1209,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     }
     if (str(a.urgency)) L.push("", "Срочность: " + str(a.urgency));
     L.push("", "Следующее касание: " + v("next_touch"));
-    if (!unknown(cl.extra)) L.push("Доп.: " + str(cl.extra));
+    if (!portrait && !unknown(cl.extra)) L.push("Доп.: " + str(cl.extra));
     return L.join("\n");
   }
 
