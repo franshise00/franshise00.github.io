@@ -136,7 +136,13 @@
   .file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
     border-radius: 16px; background: var(--card); font-weight: 600; }
   .file span { overflow-wrap: anywhere; }
-  .file .btn { padding: 10px 18px; }
+  .file .btn { padding: 9px 16px; font-size: 14px; }
+  .file-btns { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+  @media (max-width: 640px) {
+    .file { flex-direction: column; align-items: stretch; gap: 10px; }
+    .file-btns { justify-content: stretch; }
+    .file-btns .btn { flex: 1; text-align: center; }
+  }
 
   /* ---------- анализ звонка ---------- */
   textarea.in { width: 100%; min-height: 84px; resize: vertical; padding: 11px 14px; border: 1px solid var(--line); border-radius: 14px;
@@ -1756,6 +1762,35 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     return d.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
   }
 
+  function blobToB64(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () {
+        var s = String(r.result || "");
+        var idx = s.indexOf(",");
+        resolve(idx !== -1 ? s.slice(idx + 1) : s);
+      };
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function b64ToBlob(b64, mime) {
+    var bytes = b64ToBytes(b64);
+    return new Blob([bytes], { type: mime || "application/octet-stream" });
+  }
+
+  function downloadBlob(blob, filename) {
+    var u = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = u;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(u); }, 40000);
+  }
+
   var urls = [];
   $("make").addEventListener("click", function () {
     var res = C.build(collect());
@@ -1780,8 +1815,67 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
         var blob = render(doc), url = URL.createObjectURL(blob); urls.push(url);
         var row = document.createElement("div"); row.className = "file";
         var name = document.createElement("span"); name.textContent = doc.filename;
-        var a = document.createElement("a"); a.className = "btn primary"; a.href = url; a.download = doc.filename; a.textContent = "Скачать";
-        row.appendChild(name); row.appendChild(a); files.appendChild(row);
+
+        var btns = document.createElement("div"); btns.className = "file-btns";
+
+        // Скачать DOCX
+        var aDocx = document.createElement("a");
+        aDocx.className = "btn";
+        aDocx.href = url;
+        aDocx.download = doc.filename;
+        aDocx.textContent = "Скачать DOCX";
+
+        // Скачать PDF
+        var bPdf = document.createElement("button");
+        bPdf.type = "button";
+        bPdf.className = "btn primary";
+        bPdf.textContent = "Скачать PDF";
+
+        (function (docData, docxBlob, pdfBtn) {
+          pdfBtn.addEventListener("click", function () {
+            if (pdfBtn.disabled) return;
+            var orig = pdfBtn.textContent;
+            pdfBtn.disabled = true;
+            pdfBtn.textContent = "Конвертирую…";
+            $("makeMsg").textContent = "Конвертирую «" + docData.filename + "» в PDF через Google Диск…";
+            errBox.classList.add("hidden");
+
+            blobToB64(docxBlob).then(function (b64) {
+              return api({
+                action: "pdf",
+                code: state.code,
+                filename: docData.filename,
+                docx: b64
+              });
+            }).then(function (resp) {
+              if (!resp || !resp.pdf) throw new Error((resp && resp.error) || "Сервер не вернул PDF");
+              var pdfBlob = b64ToBlob(resp.pdf, "application/pdf");
+              var outName = (resp.filename || docData.filename.replace(/\.docx$/i, "") + ".pdf");
+              downloadBlob(pdfBlob, outName);
+              pdfBtn.textContent = "PDF скачан ✓";
+              $("makeMsg").textContent = "Файл «" + outName + "» успешно скачан.";
+              setTimeout(function () {
+                pdfBtn.disabled = false;
+                pdfBtn.textContent = orig;
+              }, 4000);
+            }).catch(function (err) {
+              pdfBtn.disabled = false;
+              pdfBtn.textContent = orig;
+              var msg = err.message || String(err);
+              errBox.innerHTML = "<b>Не удалось скачать PDF:</b> " + escapeHtml(msg) +
+                "<br><small style='opacity:0.85;margin-top:4px;display:block'>Убедитесь, что в Google Apps Script обновлён и развёрнут файл <code>Code.gs</code> с действием <code>pdf</code>. Также вы можете скачать готовый файл DOCX кнопкой рядом.</small>";
+              errBox.classList.remove("hidden");
+              errBox.scrollIntoView({ behavior: "smooth", block: "center" });
+              $("makeMsg").textContent = "";
+            });
+          });
+        })(doc, blob, bPdf);
+
+        btns.appendChild(aDocx);
+        btns.appendChild(bPdf);
+        row.appendChild(name);
+        row.appendChild(btns);
+        files.appendChild(row);
       });
       $("makeMsg").textContent = "Готово. Проверьте договоры перед отправкой клиенту.";
     } catch (e) {
