@@ -372,7 +372,7 @@
         <label class="f" id="svcWrap"><span>Стоимость услуг (п. 3.1), ₽</span><input type="text" inputmode="numeric" id="svc"><em id="svcWords"></em></label>
         <label class="f"><span>Коммерческое обозначение, ₽</span><input type="text" inputmode="numeric" id="brand"><em id="brandWords"></em></label>
         <label class="f"><span id="due1Lbl">Оплатить до (услуги и обозначение)</span><input type="date" id="due1"></label>
-        <div class="note info hidden" id="csSvcNote" style="grid-column:1/-1;margin-top:0">Стоимость сопровождения в договоре не меняется: 1 000 ₽ в месяц за каждый аппарат (п. 3.1). Поле «Оплатить до» — срок оплаты первого месяца и коммерческого обозначения (одна дата).</div>
+        <div class="note info hidden" id="csSvcNote" style="grid-column:1/-1;margin-top:0">По договору сопровождения: услуги (п. 3.1) — 2 500 ₽, коммерческое обозначение (п. 3.2) — 2 500 ₽. Поле «Оплатить до» — единый срок оплаты (п. 3.1 и п. 3.2).</div>
         <label class="f" id="startMonthWrap"><span>Минимум роялти действует с месяца №</span><input type="number" min="1" max="12" id="startMonth" value="2"><em id="startMonthWords"></em></label>
       </div>
     </div>
@@ -625,7 +625,8 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       "CS-LD": { file: "CS-LD.docx", title: "Лицензионный договор", short: "ЛД Cool Shake", party: "Лицензиат" },
       "CS-DS": { file: "CS-DS.docx", title: "Договор сопровождения", short: "ДС Cool Shake", party: "Заказчик" }
     },
-    brandDefault: 5000,
+    svcDefault: 2500,
+    brandDefault: 2500,
     machinesDefault: 1
   };
 
@@ -853,10 +854,12 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       need(machines >= 1 && machines <= 999, "Количество аппаратов — число от 1 до 999");
       fb = feeBlock(f, need);
     }
-    var brand = num(f.brand);
+    var svc = num(f.svc) || P.svcDefault || 2500;
+    var brand = num(f.brand) || P.brandDefault || 2500;
     if (wantSecond) {
+      need(svc > 0, "Укажите стоимость услуг сопровождения");
       need(brand > 0, "Укажите стоимость коммерческого обозначения");
-      need(parseDate(f.due1), "Укажите срок оплаты первого месяца и обозначения");
+      need(parseDate(f.due1), "Укажите срок оплаты (услуги и обозначение)");
     }
     if (errors.length) return { errors: errors, docs: [] };
 
@@ -877,7 +880,13 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     }
     if (wantSecond) {
       docs.push({ key: "CS-DS", file: P.templates["CS-DS"].file, filename: fname("CS-DS", f.numSecond),
-        data: extend({ num: String(f.numSecond).trim(), brandRub: fmtRub(brand), brandWords: numToWords(brand), due1: dateLong(f.due1) }) });
+        data: extend({
+          num: String(f.numSecond).trim(),
+          svcRub: fmtRub(svc), svcWords: numToWords(svc),
+          brandRub: fmtRub(brand), brandWords: numToWords(brand),
+          due1: dateLong(f.due1)
+        })
+      });
     }
     return { errors: [], docs: docs };
   }
@@ -1441,6 +1450,13 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
         var fees = Object.keys(C.SHIFU.formats).map(function (k) { return C.SHIFU.formats[k].fee; });
         if (fees.indexOf(num($("fee").value)) !== -1) { $("fee").value = ""; words("fee", "feeWords"); paySum(); }
       }
+      if (changed && id === "coolshake") {
+        $("brand").value = C.fmtRub(C.COOLSHAKE.brandDefault);
+        words("brand", "brandWords");
+      } else if (changed && state.prevProject === "coolshake" && id === "perec") {
+        $("brand").value = C.fmtRub(C.PROJECT.brandDefault);
+        words("brand", "brandWords");
+      }
       $("files").innerHTML = ""; $("errors").classList.add("hidden"); $("makeMsg").textContent = "";
       refresh();
       if (changed && currentTab === "call" && state.code && window.__nikaCallOpen) window.__nikaCallOpen();
@@ -1644,7 +1660,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       $("secondName").textContent = "ДС — договор сопровождения";
       $("numSecondLbl").textContent = "Номер договора сопровождения";
       $("secondTitle").textContent = "Оплата по договору сопровождения";
-      $("due1Lbl").textContent = "Оплатить до (первый месяц и обозначение)";
+      $("due1Lbl").textContent = "Оплатить до (услуги и обозначение)";
       $("territoryTitle").textContent = "Территория и аппараты";
       $("territorySub").textContent = "Территория попадает в п. 2.3 ЛД, количество аппаратов — в п. 2.4 («лицензия на открытие N Точек»).";
       $("cityLbl").textContent = "Территория (п. 2.3 ЛД)";
@@ -1782,7 +1798,8 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     $("date").value = iso;
     ["numLD", "numSecond", "city", "fee", "payDue", "due1", "appDue"].forEach(function (id) { $(id).value = ""; });
     $("population").value = "";
-    $("brand").value = C.fmtRub(C.PROJECT.brandDefault);
+    var bDef = state.project.id === "coolshake" ? C.COOLSHAKE.brandDefault : C.PROJECT.brandDefault;
+    $("brand").value = C.fmtRub(bDef);
     delete $("svc").dataset.touched;
     $("startMonth").value = 2;
     $("machines").value = C.COOLSHAKE.machinesDefault;
