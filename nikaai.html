@@ -370,9 +370,9 @@
       <h2 id="secondTitle">Оплата по ЦУБ</h2>
       <div class="grid">
         <label class="f" id="svcWrap"><span>Стоимость услуг (п. 3.1), ₽</span><input type="text" inputmode="numeric" id="svc"><em id="svcWords"></em></label>
-        <label class="f"><span>Коммерческое обозначение, ₽</span><input type="text" inputmode="numeric" id="brand"><em id="brandWords"></em></label>
+        <label class="f" id="brandWrap"><span>Коммерческое обозначение, ₽</span><input type="text" inputmode="numeric" id="brand"><em id="brandWords"></em></label>
         <label class="f"><span id="due1Lbl">Оплатить до (услуги и обозначение)</span><input type="date" id="due1"></label>
-        <div class="note info hidden" id="csSvcNote" style="grid-column:1/-1;margin-top:0">По договору сопровождения: услуги (п. 3.1) — 2 500 ₽, коммерческое обозначение (п. 3.2) — 2 500 ₽. Поле «Оплатить до» — единый срок оплаты (п. 3.1 и п. 3.2).</div>
+        <div class="note info hidden" id="csSvcNote" style="grid-column:1/-1;margin-top:0">По договору сопровождения оплачиваются: услуги (п. 3.1) — 2 500 ₽, коммерческое обозначение (п. 3.2) — 2 500 ₽ (суммы фиксированы). Срок оплаты единый для обоих пунктов.</div>
         <label class="f" id="startMonthWrap"><span>Минимум роялти действует с месяца №</span><input type="number" min="1" max="12" id="startMonth" value="2"><em id="startMonthWords"></em></label>
       </div>
     </div>
@@ -854,11 +854,9 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       need(machines >= 1 && machines <= 999, "Количество аппаратов — число от 1 до 999");
       fb = feeBlock(f, need);
     }
-    var svc = num(f.svc) || P.svcDefault || 2500;
-    var brand = num(f.brand) || P.brandDefault || 2500;
+    var svc = 2500;
+    var brand = 2500;
     if (wantSecond) {
-      need(svc > 0, "Укажите стоимость услуг сопровождения");
-      need(brand > 0, "Укажите стоимость коммерческого обозначения");
       need(parseDate(f.due1), "Укажите срок оплаты (услуги и обозначение)");
     }
     if (errors.length) return { errors: errors, docs: [] };
@@ -1653,6 +1651,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     $("perecSeg").classList.toggle("hidden", cs);
     $("machinesWrap").classList.toggle("hidden", !cs);
     $("svcWrap").classList.toggle("hidden", cs);
+    $("brandWrap").classList.toggle("hidden", cs);
     $("csSvcNote").classList.toggle("hidden", !cs);
     if (cs) {
       $("kitSub").textContent = "Cool Shake: лицензионный договор и договор сопровождения, ООО «КМК».";
