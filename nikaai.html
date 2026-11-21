@@ -165,7 +165,72 @@
   .link-btn.muted-btn:hover { color: var(--text); }
   .picked .nm { font-weight: 700; overflow-wrap: anywhere; line-height: 1.3; }
   .picked .mt { color: var(--muted); font-size: 13px; }
-  audio { display: block; width: 100%; height: 40px; margin-top: 10px; }
+  audio { display: block; width: 100%; height: 40px; margin-top: 6px; }
+
+  /* ---------- список записей звонка и мульти-плеер ---------- */
+  .file-list { display: grid; gap: 8px; margin-bottom: 12px; }
+  .file-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    border: 1px solid var(--line); border-radius: 14px; background: var(--field);
+    transition: border-color .15s, background .15s;
+  }
+  .file-item:hover { border-color: rgba(84,104,255,.35); }
+  .file-item.playing { border-color: var(--accent); background: var(--accent-soft); }
+  .track-play-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--grad); color: #fff; display: grid; place-items: center; flex: none;
+    transition: transform .12s, opacity .12s; padding: 0;
+  }
+  .track-play-btn:hover { transform: scale(1.05); }
+  .track-play-btn svg { width: 16px; height: 16px; }
+  .track-info { flex: 1; min-width: 0; }
+  .track-nm { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; line-height: 1.3; }
+  .track-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .track-del-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid transparent;
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 14px;
+    display: grid; place-items: center; transition: color .15s, background .15s; padding: 0;
+  }
+  .track-del-btn:hover { color: var(--err); background: var(--err-soft); }
+  .picked-foot {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    flex-wrap: wrap; padding: 6px 2px 14px; border-bottom: 1px solid var(--line);
+  }
+  .picked-total { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .picked-actions { display: flex; gap: 10px; }
+  .player-panel { margin-top: 14px; background: var(--field); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  .player-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+  .player-curr-label { color: var(--muted); font-weight: 500; flex: none; }
+  .player-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .call-mode-wrap { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .seg-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 620px) { .seg-modes { grid-template-columns: 1fr; } }
+  .seg-modes button {
+    display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+    padding: 10px 14px; height: auto; border-radius: 14px;
+  }
+  .seg-modes .m-title { font-weight: 700; font-size: 14px; }
+  .seg-modes .m-sub { font-size: 12px; opacity: .75; font-weight: 500; margin-top: 2px; }
+  .m-hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+  /* Карточки серии звонков */
+  .calls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 14px; }
+  .call-card {
+    background: var(--field); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .call-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .call-card-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .play-track-btn { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .sys-err-item { border-left: 4px solid var(--warn); }
+  .err-desc { font-size: 14px; line-height: 1.5; margin: 8px 0 0; }
+  .stitch-banner {
+    display: flex; align-items: center; gap: 10px; background: var(--accent-soft);
+    border: 1px solid rgba(84,104,255,.2); border-radius: 12px; padding: 10px 14px;
+    margin-bottom: 14px; font-size: 13px;
+  }
+  .stitch-banner svg { width: 18px; height: 18px; flex: none; stroke: var(--accent); }
+  .stitch-banner b { color: var(--accent); }
   .steps-p { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
   .steps-p li { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 600; flex-wrap: wrap; }
   .steps-p .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center;
@@ -413,22 +478,44 @@
 
     <div class="card" id="callInput">
       <h2>Запись звонка</h2>
-      <p class="sub">mp3, m4a, wav, ogg — до 2 часов. Большие файлы Ника сожмёт прямо в браузере, качество речи не пострадает.</p>
+      <p class="sub">mp3, m4a, wav, ogg — до 2 часов на файл. Можно загрузить один звонок, несколько частей прерванного разговора для склейки или серию звонков менеджера для выявления повторяющихся ошибок.</p>
       <label class="drop" id="drop" tabindex="0">
-        <input type="file" id="audioFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.opus,.webm" hidden>
+        <input type="file" id="audioFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.opus,.webm" multiple hidden>
         <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="dg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A77BF3"/><stop offset="1" stop-color="#5468FF"/></linearGradient></defs>
           <path d="M20 26V10m0 0l-6 6m6-6l6 6M8 26v4a2 2 0 002 2h20a2 2 0 002-2v-4" fill="none" stroke="url(#dg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <b>Перетащите запись сюда</b>
-        <span>или нажмите, чтобы выбрать файл</span>
+        <b>Перетащите аудиозаписи сюда</b>
+        <span>или нажмите, чтобы выбрать файлы (можно выбрать сразу несколько)</span>
       </label>
       <div class="hidden" id="pickedBox">
-        <div class="picked">
-          <div class="ic"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4M6.5 5v10M10 2.5v15M13.5 5v10M17 8v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
-          <div class="grow"><div class="nm" id="pickName"></div><div class="mt" id="pickMeta"></div></div>
-          <button class="link-btn" type="button" id="replace">Заменить</button>
-          <button class="link-btn muted-btn" type="button" id="clearCall">Очистить</button>
+        <div class="file-list" id="fileList"></div>
+        <div class="picked-foot">
+          <div class="picked-total" id="pickedTotal"></div>
+          <div class="picked-actions">
+            <button class="link-btn" type="button" id="addMoreFiles">+ Добавить запись</button>
+            <button class="link-btn muted-btn" type="button" id="clearCall">Очистить всё</button>
+          </div>
         </div>
-        <audio id="player" controls preload="metadata"></audio>
+        <div class="player-panel" id="playerPanel">
+          <div class="player-head">
+            <span class="player-curr-label">Сейчас в плеере:</span>
+            <span class="player-title" id="nowPlayingTitle">—</span>
+          </div>
+          <audio id="player" controls preload="metadata"></audio>
+        </div>
+        <div class="call-mode-wrap hidden" id="callModeBox">
+          <div class="lbl">Режим анализа для нескольких записей</div>
+          <div class="seg seg-modes" id="callModeSeg">
+            <button type="button" data-m="stitch" class="on">
+              <span class="m-title">Части одного звонка</span>
+              <span class="m-sub">Склейка (сброс / перезвон)</span>
+            </button>
+            <button type="button" data-m="batch">
+              <span class="m-title">Серия звонков менеджера</span>
+              <span class="m-sub">Поиск системных ошибок для РОПа</span>
+            </button>
+          </div>
+          <p class="sub m-hint" id="modeHint">Ника сама определит порядок записей (какая часть первая, какая продолжение) и сделает единый разбор диалога для CRM и встречи.</p>
+        </div>
       </div>
       <div style="margin-top:16px"><div class="lbl">Этап звонка</div>
         <div class="seg" id="stageSeg"><button type="button" data-v="pzm" class="on">ПЗМ</button><button type="button" data-v="psm">ПСМ</button><button type="button" data-v="pstl">ПСТЛ</button><button type="button" data-v="vstl">ВСТЛ</button></div></div>
@@ -440,9 +527,9 @@
         <span class="muted" id="callMsg"></span>
       </div>
       <ol class="steps-p hidden" id="steps">
-        <li data-s="prep"><span class="dot"></span><span>Подготовка записи</span><small></small></li>
+        <li data-s="prep"><span class="dot"></span><span>Подготовка записей</span><small></small></li>
         <li data-s="upload"><span class="dot"></span><span>Отправка в Gemini</span><small></small></li>
-        <li data-s="analyze"><span class="dot"></span><span>Ника слушает звонок и сверяет со скриптами</span><small></small></li>
+        <li data-s="analyze"><span class="dot"></span><span>Ника слушает записи и сверяет со скриптами</span><small></small></li>
       </ol>
     </div>
     <div class="note err hidden" id="callErr"></div>
@@ -582,9 +669,16 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     var p = parseDate(s); if (!p) return "";
     return (+p.d) + " " + MONTHS_GEN[p.m - 1] + " " + p.y;
   }
+  function dateWords(s) { // "30 ноября 2026 года"
+    var p = parseDate(s); if (!p) return "";
+    return (+p.d) + " " + MONTHS_GEN[p.m - 1] + " " + p.y + " года";
+  }
   function dateShort(s) { // "30.11.2026"
     var p = parseDate(s); if (!p) return "";
     return p.d + "." + String(p.m).padStart(2, "0") + "." + p.y;
+  }
+  function cleanNum(s) {
+    return String(s || "").trim().replace(/\s+от\s+.*$/i, "").trim();
   }
 
   // ---------------------------------------------------------------- справочник «Перец»
@@ -869,23 +963,25 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
     var p = parseDate(f.date);
     var common = {
-      dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y, dateShort: dateShort(f.date),
+      dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y,
+      dateShort: dateShort(f.date),
+      dateWords: dateWords(f.date),
       intro: clientIntro(f.clientType, c), req: clientReq(f.clientType, c), sign: clientSign(f.clientType, c)
     };
     function extend(o) { var r = {}; [common, o].forEach(function (s) { Object.keys(s).forEach(function (k) { r[k] = s[k]; }); }); return r; }
     var who = clientShortName(f.clientType, c).replace(/[\\/:*?"<>|]/g, "");
-    function fname(key, n) { return P.templates[key].short + " № " + String(n).replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx"; }
+    function fname(key, n) { return P.templates[key].short + " № " + String(cleanNum(n)).replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx"; }
 
     var docs = [];
     if (wantLD) {
-      var ld = extend({ num: String(f.numLD).trim(), territory: territory, points: pointsText(machines) });
+      var ld = extend({ num: cleanNum(f.numLD), territory: territory, points: pointsText(machines) });
       Object.keys(fb).forEach(function (k) { ld[k] = fb[k]; });
       docs.push({ key: "CS-LD", file: P.templates["CS-LD"].file, filename: fname("CS-LD", f.numLD), data: ld });
     }
     if (wantSecond) {
       docs.push({ key: "CS-DS", file: P.templates["CS-DS"].file, filename: fname("CS-DS", f.numSecond),
         data: extend({
-          num: String(f.numSecond).trim(),
+          num: cleanNum(f.numSecond),
           svcRub: fmtRub(svc), svcWords: numToWords(svc),
           brandRub: fmtRub(brand), brandWords: numToWords(brand),
           due1: dateLong(f.due1)
@@ -923,7 +1019,8 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
     var p = parseDate(f.date);
     var data = {
-      num: String(f.numLD).trim(), dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y, dateShort: dateShort(f.date),
+      num: cleanNum(f.numLD), dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y,
+      dateShort: dateShort(f.date), dateWords: dateWords(f.date),
       coverName: clientCover(f.clientType, c),
       intro: clientIntro(f.clientType, c), req: clientReq(f.clientType, c), sign: clientSign(f.clientType, c),
       territory: territory,
@@ -934,7 +1031,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     Object.keys(fb).forEach(function (k) { data[k] = fb[k]; });
     data.feeWords = cap(data.feeWords);   // в этом договоре суммы прописью с заглавной: «5 000 (Пять тысяч)»
     var who = clientShortName(f.clientType, c).replace(/[\\/:*?"<>|]/g, "");
-    var filename = P.templates["SH-LD"].short + " № " + String(f.numLD).trim().replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx";
+    var filename = P.templates["SH-LD"].short + " № " + String(cleanNum(f.numLD)).replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx";
     return { errors: [], docs: [{ key: "SH-LD", file: P.templates["SH-LD"].file, filename: filename, data: data }] };
   }
 
@@ -1010,7 +1107,8 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
     var p = parseDate(f.date);
     var common = {
-      dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y, dateShort: dateShort(f.date),
+      dDay: p.d, dMonth: MONTHS_GEN[p.m - 1], dYear: p.y,
+      dateShort: dateShort(f.date), dateWords: dateWords(f.date),
       intro: clientIntro(f.clientType, c),
       req: clientReq(f.clientType, c),
       sign: clientSign(f.clientType, c)
@@ -1019,7 +1117,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
     // ЛД
     var ldData = extend({
-      num: String(f.numLD).trim(),
+      num: cleanNum(f.numLD),
       territory: territoryText(f.city),
       feeRub: fmtRub(fee), feeWords: numToWords(fee),
       single: f.payMode !== "split", split: f.payMode === "split",
@@ -1035,7 +1133,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
     // ЦУБ / ДУ
     var secData = extend({
-      num: String(f.numSecond).trim(),
+      num: cleanNum(f.numSecond),
       svcRub: fmtRub(svc), svcWords: numToWords(svc),
       brandRub: fmtRub(brand), brandWords: numToWords(brand),
       due1: dateLong(f.due1)
@@ -1059,7 +1157,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     }
 
     var who = clientShortName(f.clientType, c).replace(/[\\/:*?"<>|]/g, "");
-    function fname(key, n) { return PROJECT.templates[key].short + " № " + String(n).replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx"; }
+    function fname(key, n) { return PROJECT.templates[key].short + " № " + String(cleanNum(n)).replace(/[\\/:*?"<>|]/g, "-") + " — " + who + ".docx"; }
 
     return {
       errors: [],
@@ -1071,7 +1169,7 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   }
 
   var api = {
-    numToWords: numToWords, fmtRub: fmtRub, cap: cap, plural: plural, dateLong: dateLong, dateShort: dateShort,
+    numToWords: numToWords, fmtRub: fmtRub, cap: cap, plural: plural, dateLong: dateLong, dateShort: dateShort, dateWords: dateWords, cleanNum: cleanNum,
     POPULATION: POPULATION, ROYALTY: ROYALTY, PROJECT: PROJECT, CLIENT_FIELDS: CLIENT_FIELDS,
     docsFor: docsFor, royaltyFor: royaltyFor, territoryText: territoryText, isCapital: isCapital,
     initials: initials, build: build, ORD_GEN: ORD_GEN,
@@ -1236,12 +1334,24 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   function nextName(o) { return (o && o.next) || "встрече"; }
   function unq(s) { return str(s).replace(/^[«"]|[»"]$/g, ""); }
 
+  function plural(n, one, two, five) {
+    n = Math.abs(n) % 100;
+    var n1 = n % 10;
+    if (n > 10 && n < 20) return five;
+    if (n1 > 1 && n1 < 5) return two;
+    if (n1 === 1) return one;
+    return five;
+  }
+
   // ---------------------------------------------------------------- текст / markdown
   function toMarkdown(a, meta) {
     a = a || {}; meta = meta || {};
     var L = [], fb = a.feedback || {}, nx = nextName(meta), cl = a.client || {};
     L.push("# Анализ звонка" + (meta.filename ? " — " + meta.filename : ""));
     L.push([meta.date, meta.project ? "Проект: " + meta.project : "", meta.stageName ? "Этап: " + meta.stageName : "", a.temperature ? "Клиент: " + a.temperature : ""].filter(Boolean).join(" · "));
+    if (str(a.parts_order)) {
+      L.push("", "**Порядок записей звонка:** " + str(a.parts_order));
+    }
     L.push("", "## Клиент и потребность");
     L.push("**Потребность:** " + (unknown(cl.need) ? "не прозвучало" : str(cl.need)));
     if (str(a.summary)) L.push("", str(a.summary));
@@ -1280,6 +1390,103 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
   }
 
+  /** Экспорт сквозного аудита нескольких звонков в Markdown */
+  function batchToMarkdown(a, meta) {
+    a = a || {}; meta = meta || {};
+    var L = [];
+    var total = a.calls_count || (arr(a.calls_review).length) || (meta.filesCount || 0);
+    L.push("# Сквозной аудит звонков менеджера");
+    L.push([meta.date, meta.project ? "Проект: " + meta.project : "", meta.stageName ? "Этап: " + meta.stageName : "", total ? "Звонков: " + total : ""].filter(Boolean).join(" · "));
+
+    if (str(a.summary)) {
+      L.push("", "## Общий вывод по серии звонков", str(a.summary));
+    }
+
+    var sys = arr(a.systemic_errors);
+    if (sys.length) {
+      L.push("", "## Повторяющиеся и системные ошибки (" + sys.length + ")");
+      sys.forEach(function (err, i) {
+        L.push("", "### " + (i + 1) + ". " + str(err.title) + (err.frequency ? " [" + str(err.frequency) + "]" : ""));
+        if (str(err.description)) L.push(str(err.description));
+        if (str(err.evidence)) L.push("> " + unq(err.evidence));
+        if (str(err.script_sample)) L.push("**Как говорить правильно:** «" + unq(err.script_sample) + "»");
+      });
+    }
+
+    var obs = arr(a.objection_patterns);
+    if (obs.length) {
+      L.push("", "## Отработка возражений в серии звонков");
+      obs.forEach(function (ob, i) {
+        L.push("", "### " + (i + 1) + ". " + str(ob.objection) + (ob.calls_occurred ? " (" + str(ob.calls_occurred) + ")" : ""));
+        if (str(ob.manager_reaction)) L.push("**Реакция менеджера:** " + str(ob.manager_reaction));
+        if (str(ob.recommended_answer)) L.push("**Рекомендуемая отработка:** " + str(ob.recommended_answer));
+      });
+    }
+
+    var calls = arr(a.calls_review);
+    if (calls.length) {
+      L.push("", "## Сводка по каждому звонку");
+      calls.forEach(function (c, i) {
+        L.push("", "### Звонок " + (c.call_index || (i + 1)) + ": " + str(c.client_info || "Клиент") + (c.temperature ? " (" + str(c.temperature) + ")" : ""));
+        if (str(c.filename)) L.push("_Файл: " + str(c.filename) + "_");
+        if (str(c.result)) L.push("**Результат:** " + str(c.result));
+        if (str(c.key_win)) L.push("**Плюс:** " + str(c.key_win));
+        if (str(c.key_flaw)) L.push("**Ошибка:** " + str(c.key_flaw));
+      });
+    }
+
+    var good = arr(a.good_points);
+    if (good.length) {
+      L.push("", "## Что получается стабильно хорошо");
+      good.forEach(function (g) { L.push("- " + str(g)); });
+    }
+
+    var plan = arr(a.training_plan);
+    if (plan.length) {
+      L.push("", "## План тренировки для менеджера");
+      plan.forEach(function (p) { L.push("- [ ] " + str(p)); });
+    }
+
+    if (meta.transcript) {
+      L.push("", "## Расшифровка звонков", "", meta.transcript);
+    }
+
+    return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
+  }
+
+  /** Краткая выжимка аудита для отправки в Telegram / чат РОПа */
+  function batchRopComment(a, o) {
+    a = a || {}; o = o || {};
+    var L = [];
+    var total = a.calls_count || (arr(a.calls_review).length) || (o.filesCount || 0);
+    L.push("🎯 Аудит звонков менеджера (" + total + " " + plural(total, "звонок", "звонка", "звонков") + ")");
+    if (o.project) L.push("Проект: " + o.project);
+    if (str(a.summary)) L.push("", "📌 Главный вывод:", str(a.summary));
+
+    var sys = arr(a.systemic_errors);
+    if (sys.length) {
+      L.push("", "⚠️ Повторяющиеся ошибки:");
+      sys.forEach(function (err, i) {
+        L.push((i + 1) + ". " + str(err.title) + (err.frequency ? " (" + str(err.frequency) + ")" : "") +
+          (str(err.script_sample) ? "\n   → Как говорить: «" + unq(err.script_sample) + "»" : ""));
+      });
+    }
+
+    var good = arr(a.good_points);
+    if (good.length) {
+      L.push("", "💡 Сильные стороны:");
+      good.slice(0, 3).forEach(function (g) { L.push("— " + str(g)); });
+    }
+
+    var plan = arr(a.training_plan);
+    if (plan.length) {
+      L.push("", "🚀 Внедрить / натренировать:");
+      plan.forEach(function (p, i) { L.push((i + 1) + ". " + str(p)); });
+    }
+
+    return L.join("\n");
+  }
+
   // ---------------------------------------------------------------- HTML разбора
   function esc(s) { return str(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function list(items, cls) {
@@ -1301,6 +1508,10 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     // 1. Клиент и его потребность
     var who = [cl.name, cl.city].filter(function (x) { return !unknown(x); }).map(str).join(", ") || "Клиент";
     h.push('<div class="card r-client">');
+    if (str(a.parts_order)) {
+      h.push('<div class="stitch-banner"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 7.5l-5 5m-1.5-5a3.5 3.5 0 015-5l2 2a3.5 3.5 0 010 5l-1 1m-4 4l-1 1a3.5 3.5 0 01-5 0l-2-2a3.5 3.5 0 010-5l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+        '<div><b>Хронология записей звонка:</b> ' + esc(a.parts_order) + '</div></div>');
+    }
     h.push('<div class="r-badges">' +
       (a.temperature ? '<span class="temp ' + t + '"><i></i>' + esc(cap(a.temperature)) + " клиент</span>" : "") +
       (o.stageName ? '<span class="pill">' + esc(o.stageName) + "</span>" : "") + "</div>");
@@ -1362,12 +1573,120 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     if (arr(a.next_steps).length) h.push(acc("Следующие шаги", arr(a.next_steps).length, list(a.next_steps, "steps")));
     return h.join("");
   }
+
+  function renderBatchHtml(a, o) {
+    a = a || {}; o = o || {};
+    var h = [];
+    var total = a.calls_count || (arr(a.calls_review).length) || (o.filesCount || 0);
+
+    // 1. Главная карточка: Общий вывод
+    h.push('<div class="card r-client">');
+    h.push('<div class="r-badges">' +
+      '<span class="pill">Серия: ' + total + ' ' + plural(total, 'звонок', 'звонка', 'звонков') + '</span>' +
+      (o.projectName ? '<span class="pill">' + esc(o.projectName) + '</span>' : '') +
+      (o.stageName ? '<span class="pill">Базовый этап: ' + esc(o.stageName) + '</span>' : '') +
+      '</div>');
+    h.push('<div class="card-h"><h2>Сквозной аудит звонков менеджера</h2>' +
+      '<button class="btn sm" type="button" data-copy-rop>Скопировать для РОПа</button></div>');
+    if (str(a.summary)) {
+      h.push('<p class="r-lead" style="margin-top:12px">' + esc(a.summary) + '</p>');
+    }
+    h.push('</div>');
+
+    // 2. Карточка: Повторяющиеся и системные ошибки
+    var sys = arr(a.systemic_errors);
+    h.push('<div class="card">');
+    h.push('<h2>Повторяющиеся ошибки менеджера <span class="cnt">' + sys.length + '</span></h2>');
+    h.push('<p class="sub">Системные пробелы, повторяющиеся в нескольких звонках. С готовыми речевыми модулями для исправления.</p>');
+    if (!sys.length) {
+      h.push('<p class="muted">Критичных повторяющихся ошибок не выявлено — звонки проведены ровно.</p>');
+    } else {
+      sys.forEach(function (err, idx) {
+        h.push('<div class="obj sys-err-item">');
+        h.push('<div class="obj-h"><b>' + (idx + 1) + '. ' + esc(err.title) + '</b>' +
+          (err.frequency ? '<span class="st heard">' + esc(err.frequency) + '</span>' : '') + '</div>');
+        if (str(err.description)) {
+          h.push('<p class="err-desc">' + esc(err.description) + '</p>');
+        }
+        if (str(err.evidence)) {
+          h.push('<blockquote><b>Где проявилось:</b> ' + esc(unq(err.evidence)) + '</blockquote>');
+        }
+        if (str(err.script_sample)) {
+          h.push('<div class="ans"><span class="ans-l">Как говорить правильно (речевой модуль)</span>«' + esc(unq(err.script_sample)) + '»</div>');
+        }
+        h.push('</div>');
+      });
+    }
+    h.push('</div>');
+
+    // 3. Карточка: Отработка возражений
+    var obs = arr(a.objection_patterns);
+    if (obs.length) {
+      h.push('<div class="card">');
+      h.push('<h2>Отработка возражений в серии <span class="cnt">' + obs.length + '</span></h2>');
+      h.push('<p class="sub">С какими возражениями сталкивался менеджер и как на них реагировал.</p>');
+      obs.forEach(function (ob) {
+        h.push('<div class="obj">');
+        h.push('<div class="obj-h"><b>' + esc(ob.objection) + '</b>' +
+          (ob.calls_occurred ? '<span class="st hidden-o">' + esc(ob.calls_occurred) + '</span>' : '') + '</div>');
+        if (str(ob.manager_reaction)) {
+          h.push('<p class="small muted" style="margin:8px 0 0"><b>Реакция менеджера:</b> ' + esc(ob.manager_reaction) + '</p>');
+        }
+        if (str(ob.recommended_answer)) {
+          h.push('<div class="ans"><span class="ans-l">Рекомендуемая отработка</span>' + esc(ob.recommended_answer) + '</div>');
+        }
+        h.push('</div>');
+      });
+      h.push('</div>');
+    }
+
+    // 4. Карточка: Сводка по каждому звонку (с кнопкой быстрого прослушивания)
+    var calls = arr(a.calls_review);
+    if (calls.length) {
+      h.push('<div class="card">');
+      h.push('<h2>Сводка по каждому звонку <span class="cnt">' + calls.length + '</span></h2>');
+      h.push('<p class="sub">Итог по каждой записи — нажмите «Слушать», чтобы включить конкретный звонок в плеере.</p>');
+      h.push('<div class="calls-grid">');
+      calls.forEach(function (c, i) {
+        var tClass = TEMP[str(c.temperature).toLowerCase()] || "";
+        h.push('<div class="call-card">');
+        h.push('<div class="call-card-head">' +
+          '<b>Звонок ' + (c.call_index || (i + 1)) + ': ' + esc(c.client_info || 'Клиент') + '</b>' +
+          '<div class="call-card-tags">' +
+          (c.temperature ? '<span class="temp ' + tClass + '"><i></i>' + esc(cap(c.temperature)) + '</span>' : '') +
+          '<button class="link-btn play-track-btn" type="button" data-play-track="' + i + '">▶ Слушать</button>' +
+          '</div></div>');
+        if (str(c.filename)) h.push('<div class="small muted">' + esc(c.filename) + '</div>');
+        if (str(c.result)) h.push('<div class="need" style="margin-top:8px;font-size:14px"><span class="ans-l">Результат звонка</span>' + esc(c.result) + '</div>');
+        if (str(c.key_win)) h.push('<p class="small" style="margin:6px 0 2px"><b style="color:var(--green)">✓ Плюс:</b> ' + esc(c.key_win) + '</p>');
+        if (str(c.key_flaw)) h.push('<p class="small" style="margin:2px 0 0"><b style="color:var(--err)">✕ Ошибка:</b> ' + esc(c.key_flaw) + '</p>');
+        h.push('</div>');
+      });
+      h.push('</div></div>');
+    }
+
+    // 5. Карточка: Сильные стороны
+    var good = arr(a.good_points);
+    if (good.length) {
+      h.push(acc('Что получается стабильно хорошо', good.length, list(good, 'l-good'), true));
+    }
+
+    // 6. Карточка: План тренировки / точки роста
+    var plan = arr(a.training_plan);
+    if (plan.length) {
+      h.push(acc('План тренировки и регламентные действия', plan.length, list(plan, 'steps'), true));
+    }
+
+    return h.join('');
+  }
+
   function cap(s) { s = str(s); return s.charAt(0).toUpperCase() + s.slice(1); }
 
   var api = {
     SEND_AS_IS_MAX: SEND_AS_IS_MAX, SEND_MAX: SEND_MAX, MAX_SECONDS: MAX_SECONDS, LAME_URL: LAME_URL,
-    mimeFor: mimeFor, needsTranscode: needsTranscode, isAudioName: isAudioName, fmtSize: fmtSize, fmtDur: fmtDur,
-    transcode: transcode, blobToBase64: blobToBase64, toMarkdown: toMarkdown, renderHtml: renderHtml, crmComment: crmComment, esc: esc
+    mimeFor: mimeFor, needsTranscode: needsTranscode, isAudioName: isAudioName, fmtSize: fmtSize, fmtDur: fmtDur, plural: plural,
+    transcode: transcode, blobToBase64: blobToBase64, toMarkdown: toMarkdown, batchToMarkdown: batchToMarkdown,
+    renderHtml: renderHtml, renderBatchHtml: renderBatchHtml, crmComment: crmComment, batchRopComment: batchRopComment, esc: esc
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.NikaCall = api;
@@ -1919,8 +2238,20 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
   // ================================================================ АНАЛИЗ ЗВОНКА
   var K = window.NikaCall;
-  var call = { file: null, url: null, sig: "", duration: 0, uploaded: null, uploadedFor: "", analysis: null, meta: null,
-    transcript: "", busy: false, kbFor: "", kb: null, timer: null, stage: "pzm" };
+  var call = {
+    files: [], // Array<{ file: File, url: string, sig: string, duration: number, blob: Blob, mime: string, uploaded: object, uploadedSig: string }>
+    activeTrackIndex: 0,
+    mode: "single", // "single" | "stitch" | "batch"
+    stage: "pzm",
+    busy: false,
+    kbFor: "",
+    kb: null,
+    timer: null,
+    analysis: null,
+    analysisMode: null,
+    meta: null,
+    transcript: ""
+  };
   var STAGE_NAMES = { pzm: { s: "ПЗМ", n: "ПСМ" }, psm: { s: "ПСМ", n: "ПСТЛ" }, pstl: { s: "ПСТЛ", n: "ВСТЛ" }, vstl: { s: "ВСТЛ", n: "сделке" } };
   if (STAGE_NAMES[store.get("nika_call_stage")]) call.stage = store.get("nika_call_stage");
   document.querySelectorAll("#stageSeg button").forEach(function (b) {
@@ -1962,48 +2293,253 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
       (kb.truncated ? '<br><span class="small">База большая — Ника прочитает первые ~250 тыс. символов. Уберите лишнее, чтобы не платить за него.</span>' : "") + skip;
   }
 
-  // ---------------------------------------------------------------- выбор файла
+  // ---------------------------------------------------------------- выбор файлов и список
   var drop = $("drop"), fileInput = $("audioFile");
   drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
   ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
   ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove("over"); }); });
-  drop.addEventListener("drop", function (e) { e.preventDefault(); pickFile(e.dataTransfer.files[0]); });
-  fileInput.addEventListener("change", function () { pickFile(fileInput.files[0]); });
-  $("replace").addEventListener("click", function () { if (!call.busy) { fileInput.value = ""; fileInput.click(); } });
+  drop.addEventListener("drop", function (e) { e.preventDefault(); addFiles(e.dataTransfer.files); });
+  fileInput.addEventListener("change", function () { addFiles(fileInput.files); });
 
-  function pickFile(f) {
-    if (!f || call.busy) return;
+  function addFiles(fileList) {
+    if (!fileList || !fileList.length || call.busy) return;
     hideCallErr();
-    if (!K.isAudioName(f.name, f.type)) { showCallErr("Это не похоже на запись звонка. Нужен аудиофайл: mp3, m4a, wav или ogg."); return; }
-    if (call.url) URL.revokeObjectURL(call.url);
-    call.file = f; call.sig = f.name + "|" + f.size + "|" + f.lastModified; call.duration = 0;
-    call.url = URL.createObjectURL(f);
-    $("player").src = call.url;
-    $("pickName").textContent = f.name;
-    $("pickMeta").textContent = K.fmtSize(f.size);
-    drop.classList.add("hidden"); $("pickedBox").classList.remove("hidden");
-    $("steps").classList.add("hidden");
-    $("analyze").disabled = false;
-    $("callMsg").textContent = "";
+    var added = 0, rejected = 0;
+    Array.from(fileList).forEach(function (f) {
+      if (!K.isAudioName(f.name, f.type)) { rejected++; return; }
+      var url = URL.createObjectURL(f);
+      var item = {
+        file: f,
+        url: url,
+        sig: f.name + "|" + f.size + "|" + f.lastModified,
+        duration: 0,
+        blob: null,
+        mime: "",
+        uploaded: null,
+        uploadedSig: ""
+      };
+      try {
+        var a = new Audio();
+        a.preload = "metadata";
+        a.src = url;
+        a.onloadedmetadata = function () {
+          if (a.duration && isFinite(a.duration) && a.duration > 0) {
+            item.duration = a.duration;
+            updatePickedMeta();
+          }
+        };
+      } catch (e) {}
+      call.files.push(item);
+      added++;
+    });
+
+    if (rejected > 0 && !added) {
+      showCallErr("Выбранные файлы не похожи на аудиозаписи. Нужны mp3, m4a, wav или ogg.");
+      return;
+    }
+
+    if (call.files.length === 1) {
+      call.mode = "single";
+    } else if (call.files.length > 1 && call.mode === "single") {
+      call.mode = "stitch";
+    }
+
+    renderFileList();
+    if (call.files.length && !$("player").src) {
+      loadTrack(0, false);
+    }
   }
-  $("player").addEventListener("loadedmetadata", function () {
-    var d = $("player").duration;
-    if (call.file && isFinite(d) && d > 0) { call.duration = d; $("pickMeta").textContent = K.fmtSize(call.file.size) + " · " + K.fmtDur(d); }
+
+  function renderFileList() {
+    if (!call.files.length) {
+      drop.classList.remove("hidden");
+      $("pickedBox").classList.add("hidden");
+      $("steps").classList.add("hidden");
+      $("analyze").disabled = true;
+      return;
+    }
+    drop.classList.add("hidden");
+    $("pickedBox").classList.remove("hidden");
+    $("analyze").disabled = call.busy;
+
+    var listEl = $("fileList");
+    listEl.innerHTML = "";
+    call.files.forEach(function (item, idx) {
+      var div = document.createElement("div");
+      div.className = "file-item" + (idx === call.activeTrackIndex ? " playing" : "");
+      div.setAttribute("data-idx", idx);
+      div.innerHTML =
+        '<button class="track-play-btn" type="button" title="Слушать / Пауза" data-play="' + idx + '">' +
+        '<svg class="ic-play" viewBox="0 0 20 20"><polygon points="6,4 16,10 6,16" fill="currentColor"/></svg>' +
+        '<svg class="ic-pause hidden" viewBox="0 0 20 20"><rect x="5" y="4" width="3" height="12" fill="currentColor"/><rect x="12" y="4" width="3" height="12" fill="currentColor"/></svg>' +
+        '</button>' +
+        '<div class="track-info">' +
+        '<div class="track-nm">' + (idx + 1) + '. ' + K.esc(item.file.name) + '</div>' +
+        '<div class="track-meta" data-meta-idx="' + idx + '">' + K.fmtSize(item.file.size) + (item.duration ? ' · ' + K.fmtDur(item.duration) : '') + '</div>' +
+        '</div>' +
+        '<button class="track-del-btn" type="button" title="Удалить запись" data-del="' + idx + '">✕</button>';
+      listEl.appendChild(div);
+    });
+
+    updatePickedMeta();
+
+    var modeBox = $("callModeBox");
+    if (call.files.length > 1) {
+      modeBox.classList.remove("hidden");
+      updateModeButtons();
+    } else {
+      modeBox.classList.add("hidden");
+    }
+  }
+
+  function updatePickedMeta() {
+    var totalSize = 0, totalDur = 0;
+    call.files.forEach(function (f, i) {
+      totalSize += f.file.size;
+      totalDur += (f.duration || 0);
+      var m = document.querySelector('[data-meta-idx="' + i + '"]');
+      if (m) m.textContent = K.fmtSize(f.file.size) + (f.duration ? ' · ' + K.fmtDur(f.duration) : '');
+    });
+    var n = call.files.length;
+    $("pickedTotal").textContent = "Всего: " + n + " " + K.plural(n, "запись", "записи", "записей") +
+      (totalDur ? " · " + K.fmtDur(totalDur) : "") + " · " + K.fmtSize(totalSize);
+  }
+
+  function updateModeButtons() {
+    var seg = $("callModeSeg");
+    if (!seg) return;
+    seg.querySelectorAll("button").forEach(function (btn) {
+      var m = btn.getAttribute("data-m");
+      btn.classList.toggle("on", m === call.mode);
+    });
+    var hint = $("modeHint");
+    if (call.mode === "batch") {
+      hint.textContent = "Ника проанализирует все звонки, выявит системные ошибки, повторяющиеся отклонения от скрипта и точки роста без необходимости переслушивать все записи.";
+    } else {
+      hint.textContent = "Ника сама определит порядок записей (какая часть первая, какая продолжение) и сделает единый разбор диалога для CRM и встречи.";
+    }
+  }
+
+  $("callModeSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-m]");
+    if (!b || call.busy) return;
+    call.mode = b.getAttribute("data-m");
+    updateModeButtons();
   });
 
-  // ---------------------------------------------------------------- шаги
+  $("fileList").addEventListener("click", function (e) {
+    var playBtn = e.target.closest("[data-play]");
+    if (playBtn) {
+      var idx = parseInt(playBtn.getAttribute("data-play"), 10);
+      toggleTrackPlay(idx);
+      return;
+    }
+    var delBtn = e.target.closest("[data-del]");
+    if (delBtn) {
+      var idx2 = parseInt(delBtn.getAttribute("data-del"), 10);
+      removeTrack(idx2);
+      return;
+    }
+  });
+
+  $("addMoreFiles").addEventListener("click", function () {
+    if (!call.busy) {
+      fileInput.value = "";
+      fileInput.click();
+    }
+  });
+
+  // ---------------------------------------------------------------- плеер
+  function loadTrack(idx, autoPlay) {
+    if (idx < 0 || idx >= call.files.length) return;
+    call.activeTrackIndex = idx;
+    var item = call.files[idx];
+    $("player").src = item.url;
+    $("nowPlayingTitle").textContent = (idx + 1) + ". " + item.file.name;
+    updateTrackPlayIcons();
+    if (autoPlay) {
+      $("player").play().catch(function () {});
+    }
+  }
+
+  function toggleTrackPlay(idx) {
+    if (call.activeTrackIndex !== idx || !$("player").src) {
+      loadTrack(idx, true);
+    } else {
+      if ($("player").paused) $("player").play().catch(function () {});
+      else $("player").pause();
+    }
+    updateTrackPlayIcons();
+  }
+
+  function removeTrack(idx) {
+    if (call.busy || idx < 0 || idx >= call.files.length) return;
+    var removed = call.files.splice(idx, 1)[0];
+    if (removed && removed.url) URL.revokeObjectURL(removed.url);
+    if (!call.files.length) {
+      resetCall();
+      return;
+    }
+    if (call.files.length === 1) {
+      call.mode = "single";
+    }
+    if (call.activeTrackIndex >= call.files.length) {
+      call.activeTrackIndex = call.files.length - 1;
+    }
+    loadTrack(call.activeTrackIndex, false);
+    renderFileList();
+  }
+
+  function updateTrackPlayIcons() {
+    var isPlaying = !$("player").paused;
+    document.querySelectorAll(".file-item").forEach(function (row, idx) {
+      var isCurrent = (idx === call.activeTrackIndex);
+      row.classList.toggle("playing", isCurrent);
+      var playIc = row.querySelector(".ic-play");
+      var pauseIc = row.querySelector(".ic-pause");
+      if (playIc && pauseIc) {
+        if (isCurrent && isPlaying) {
+          playIc.classList.add("hidden");
+          pauseIc.classList.remove("hidden");
+        } else {
+          playIc.classList.remove("hidden");
+          pauseIc.classList.add("hidden");
+        }
+      }
+    });
+  }
+
+  $("player").addEventListener("play", updateTrackPlayIcons);
+  $("player").addEventListener("pause", updateTrackPlayIcons);
+  $("player").addEventListener("ended", function () {
+    if (call.activeTrackIndex < call.files.length - 1) {
+      loadTrack(call.activeTrackIndex + 1, true);
+    } else {
+      updateTrackPlayIcons();
+    }
+  });
+  $("player").addEventListener("loadedmetadata", function () {
+    var d = $("player").duration;
+    if (call.files[call.activeTrackIndex] && isFinite(d) && d > 0) {
+      call.files[call.activeTrackIndex].duration = d;
+      updatePickedMeta();
+    }
+  });
+
+  // ---------------------------------------------------------------- шаги и статус
   function step(name, status, note) {
     var li = document.querySelector('#steps li[data-s="' + name + '"]');
+    if (!li) return;
     li.className = status || "";
     li.querySelector("small").textContent = note || "";
   }
   function failActiveStep() { var li = document.querySelector("#steps li.active"); if (li) li.className = "fail"; }
   function setBusy(b) {
     call.busy = b;
-    $("analyze").disabled = b || !call.file;
+    $("analyze").disabled = b || !call.files.length;
     $("analyze").textContent = b ? "Анализирую…" : "Проанализировать";
-    $("replace").disabled = b;
-    $("clearCall").disabled = b;
+    var addBtn = $("addMoreFiles"); if (addBtn) addBtn.disabled = b;
+    var clrBtn = $("clearCall"); if (clrBtn) clrBtn.disabled = b;
   }
   function showCallErr(msg, withRetry) {
     var box = $("callErr");
@@ -2018,79 +2554,139 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
 
   // ---------------------------------------------------------------- подготовка и отправка
   var TOO_LONG = "Запись длиннее 2 часов — разбейте её на части.";
-  function prepareAudio(f) {
-    step("prep", "active", "");
-    if (call.duration > K.MAX_SECONDS) return Promise.reject(new Error(TOO_LONG));
-    if (!K.needsTranscode(f.name, f.type, f.size)) {
-      step("prep", "done", "без сжатия, " + K.fmtSize(f.size));
-      return Promise.resolve({ blob: f, mime: K.mimeFor(f.name, f.type) });
+
+  async function prepareAllFiles() {
+    step("prep", "active", "Подготовка…");
+    var total = call.files.length;
+    for (var i = 0; i < total; i++) {
+      var item = call.files[i];
+      if (item.duration > K.MAX_SECONDS) throw new Error("Файл «" + item.file.name + "» длиннее 2 часов — разбейте его на части.");
+      if (item.blob && item.mime) continue;
+
+      if (!K.needsTranscode(item.file.name, item.file.type, item.file.size)) {
+        item.blob = item.file;
+        item.mime = K.mimeFor(item.file.name, item.file.type) || "audio/mp3";
+      } else {
+        step("prep", "active", "Сжатие " + (i + 1) + " из " + total + "…");
+        var res = await K.transcode(item.file, function (p) {
+          step("prep", "active", "Сжатие " + (i + 1) + " из " + total + "… " + Math.round(p * 100) + "%");
+        });
+        item.blob = res.blob;
+        item.mime = res.mime;
+        if (res.duration && !item.duration) item.duration = res.duration;
+      }
     }
-    return K.transcode(f, function (p) { step("prep", "active", "сжимаю… " + Math.round(p * 100) + "%"); })
-      .then(function (x) {
-        if (x.duration && !call.duration) call.duration = x.duration;
-        if (x.duration > K.MAX_SECONDS) throw new Error(TOO_LONG);
-        if (x.blob.size > K.SEND_MAX) throw new Error("Запись слишком большая даже после сжатия — разбейте её на части.");
-        step("prep", "done", K.fmtSize(f.size) + " → " + K.fmtSize(x.blob.size));
-        return x;
-      })
-      .catch(function (e) {
-        if (e.message === TOO_LONG || /разбейте/.test(e.message)) throw e;
-        var mime = K.mimeFor(f.name, f.type);
-        if (mime && f.size <= K.SEND_MAX) { step("prep", "done", "отправлю без сжатия"); return { blob: f, mime: mime }; }
-        throw new Error(/модуль сжатия/.test(e.message) ? e.message : "Браузер не смог прочитать эту запись. Сохраните её в mp3 и загрузите снова.");
-      });
+    step("prep", "done", total + " " + K.plural(total, "запись готова", "записи готовы", "записей готово"));
+  }
+
+  async function uploadAllFiles() {
+    step("upload", "active", "Отправка в Gemini…");
+    var total = call.files.length;
+    for (var i = 0; i < total; i++) {
+      var item = call.files[i];
+      if (item.uploaded && item.uploadedSig === item.sig) continue;
+
+      step("upload", "active", "Отправка " + (i + 1) + " из " + total + " (" + K.fmtSize(item.blob.size) + ")…");
+      var b64 = await K.blobToBase64(item.blob);
+      var j = await api({ action: "upload", code: state.code, audio: b64, mime: item.mime, filename: item.file.name });
+      item.uploaded = j.file;
+      item.uploadedSig = item.sig;
+    }
+    step("upload", "done", "Все " + total + " " + K.plural(total, "запись загружена", "записи загружены", "записей загружено"));
   }
 
   $("analyze").addEventListener("click", runAnalysis);
-  function runAnalysis() {
-    if (!call.file || call.busy) return;
-    var f = call.file, sig = call.sig;
+
+  async function runAnalysis() {
+    if (!call.files.length || call.busy) return;
     hideCallErr(); setBusy(true);
     $("steps").classList.remove("hidden");
     ["prep", "upload", "analyze"].forEach(function (s) { step(s, "", ""); });
 
-    var ready;
-    if (call.uploaded && call.uploadedFor === sig) {
-      step("prep", "done", ""); step("upload", "done", "запись уже загружена");
-      ready = Promise.resolve(call.uploaded);
-    } else {
-      ready = prepareAudio(f).then(function (x) {
-        step("upload", "active", K.fmtSize(x.blob.size));
-        return K.blobToBase64(x.blob).then(function (b64) {
-          return api({ action: "upload", code: state.code, audio: b64, mime: x.mime, filename: f.name });
-        });
-      }).then(function (j) {
-        call.uploaded = j.file; call.uploadedFor = sig;
-        step("upload", "done", "");
-        return j.file;
-      });
-    }
+    try {
+      await prepareAllFiles();
+      await uploadAllFiles();
 
-    ready.then(function (file) {
       var t0 = Date.now();
       step("analyze", "active", "обычно 20–60 с");
-      call.timer = setInterval(function () { step("analyze", "active", Math.round((Date.now() - t0) / 1000) + " с · обычно 20–60 с"); }, 1000);
-      return api({
-        action: "analyze", code: state.code, file: file, project: state.project.id, projectName: state.project.name, stage: call.stage,
-        note: $("callNote").value, filename: f.name, durationSec: Math.round(call.duration || 0)
-      });
-    }).then(function (j) {
+      call.timer = setInterval(function () {
+        step("analyze", "active", Math.round((Date.now() - t0) / 1000) + " с · обычно 20–60 с");
+      }, 1000);
+
+      var mode = call.files.length > 1 ? call.mode : "single";
+      var payload = {
+        action: "analyze",
+        code: state.code,
+        mode: mode,
+        project: state.project.id,
+        projectName: state.project.name,
+        stage: call.stage,
+        note: $("callNote").value,
+        files: call.files.map(function (item) {
+          return {
+            uri: item.uploaded.uri,
+            name: item.uploaded.name,
+            mime: item.uploaded.mime,
+            filename: item.file.name,
+            durationSec: Math.round(item.duration || 0)
+          };
+        })
+      };
+
+      var j = await api(payload);
       clearInterval(call.timer);
       step("analyze", "done", (j.seconds || 0) + " с");
-      if (call.sig === sig) showResult(j, f);
-    }).catch(function (e) {
+
+      if (j.mode === "batch" || mode === "batch") {
+        showBatchResult(j);
+      } else {
+        showResult(j);
+      }
+    } catch (e) {
       clearInterval(call.timer);
       failActiveStep();
-      showCallErr(e.message, call.uploaded && call.uploadedFor === sig);
-    }).then(function () { setBusy(false); });
+      showCallErr(e.message, call.files.some(function (f) { return !!f.uploaded; }));
+    } finally {
+      setBusy(false);
+    }
   }
 
   // ---------------------------------------------------------------- результат
-  function showResult(j, f) {
-    call.analysis = j.analysis; call.transcript = "";
+  function showResult(j) {
+    call.analysis = j.analysis;
+    call.analysisMode = j.mode || (call.files.length > 1 ? "stitch" : "single");
+    call.transcript = "";
     var sn = STAGE_NAMES[call.stage];
-    call.meta = { filename: f.name, date: new Date().toLocaleDateString("ru-RU"), project: state.project.name, stageName: sn.s, next: sn.n };
+    var firstName = call.files[0] ? call.files[0].file.name : "звонок";
+    call.meta = {
+      filename: call.files.length > 1 ? (call.files.length + " частей — " + firstName) : firstName,
+      date: new Date().toLocaleDateString("ru-RU"),
+      project: state.project.name,
+      stageName: sn.s,
+      next: sn.n,
+      filesCount: call.files.length
+    };
     $("resBody").innerHTML = K.renderHtml(j.analysis, call.meta);
+    renderResultFooter(j);
+  }
+
+  function showBatchResult(j) {
+    call.analysis = j.analysis;
+    call.analysisMode = "batch";
+    call.transcript = "";
+    var sn = STAGE_NAMES[call.stage];
+    call.meta = {
+      date: new Date().toLocaleDateString("ru-RU"),
+      project: state.project.name,
+      projectName: state.project.name,
+      stageName: sn.s,
+      filesCount: call.files.length
+    };
+    $("resBody").innerHTML = K.renderBatchHtml(j.analysis, call.meta);
+    renderResultFooter(j);
+  }
+
+  function renderResultFooter(j) {
     var u = j.usage || {}, kbN = j.kb && j.kb.files ? j.kb.files.length : 0;
     $("resMeta").textContent = "Модель: " + (j.model || "Gemini") +
       (u.total ? " · токены: запрос " + C.fmtRub(u.input) + ", ответ " + C.fmtRub((u.output || 0) + (u.thinking || 0)) : "") +
@@ -2102,15 +2698,31 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
     $("callResult").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function resultText() { return K.toMarkdown(call.analysis, Object.assign({ transcript: call.transcript }, call.meta)); }
+  function resultText() {
+    if (call.analysisMode === "batch") {
+      return K.batchToMarkdown(call.analysis, Object.assign({ transcript: call.transcript }, call.meta));
+    }
+    return K.toMarkdown(call.analysis, Object.assign({ transcript: call.transcript }, call.meta));
+  }
   function flash(btn, text) {
     var old = btn.textContent; btn.textContent = text;
     setTimeout(function () { btn.textContent = old; }, 1600);
   }
   $("copyRes").addEventListener("click", function () { copyText(resultText(), $("copyRes")); });
   $("resBody").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-copy-crm]");
-    if (b && call.analysis) copyText(K.crmComment(call.analysis, call.meta), b);
+    var bCrm = e.target.closest("[data-copy-crm]");
+    if (bCrm && call.analysis) copyText(K.crmComment(call.analysis, call.meta), bCrm);
+    var bRop = e.target.closest("[data-copy-rop]");
+    if (bRop && call.analysis) copyText(K.batchRopComment(call.analysis, call.meta), bRop);
+    var bPlay = e.target.closest("[data-play-track]");
+    if (bPlay) {
+      var trkIdx = parseInt(bPlay.getAttribute("data-play-track"), 10);
+      if (trkIdx >= 0 && trkIdx < call.files.length) {
+        loadTrack(trkIdx, true);
+        var playerBox = $("playerPanel");
+        if (playerBox) playerBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   });
   function copyText(text, btn) {
     var fallback = function () {
@@ -2126,35 +2738,66 @@ var API_URL = "https://script.google.com/macros/s/AKfycbyxnvrBMMhmrpc_F6akHVybr4
   $("dlRes").addEventListener("click", function () {
     var blob = new Blob([resultText()], { type: "text/markdown;charset=utf-8" });
     var a = document.createElement("a"), url = URL.createObjectURL(blob);
-    a.href = url; a.download = "Анализ звонка — " + call.meta.filename.replace(/\.[^.]+$/, "") + ".md";
+    a.href = url;
+    var name = (call.analysisMode === "batch")
+      ? ("Аудит звонков менеджера — " + state.project.name + " (" + call.files.length + " звонков).md")
+      : ("Анализ звонка — " + (call.meta.filename || "запись").replace(/\.[^.]+$/, "") + ".md");
+    a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   });
   function resetCall() {
     if (call.busy) return;
-    if (call.url) URL.revokeObjectURL(call.url);
-    call.file = null; call.url = null; call.sig = ""; call.duration = 0; call.analysis = null; call.transcript = "";
-    $("player").removeAttribute("src"); fileInput.value = ""; $("callNote").value = "";
-    drop.classList.remove("hidden"); $("pickedBox").classList.add("hidden");
-    $("steps").classList.add("hidden"); $("callResult").classList.add("hidden"); hideCallErr();
+    $("player").pause();
+    $("player").removeAttribute("src");
+    call.files.forEach(function (item) {
+      if (item.url) URL.revokeObjectURL(item.url);
+    });
+    call.files = [];
+    call.activeTrackIndex = 0;
+    call.mode = "single";
+    call.analysis = null;
+    call.analysisMode = null;
+    call.transcript = "";
+    fileInput.value = "";
+    $("callNote").value = "";
+    drop.classList.remove("hidden");
+    $("pickedBox").classList.add("hidden");
+    $("steps").classList.add("hidden");
+    $("callResult").classList.add("hidden");
+    hideCallErr();
     $("analyze").disabled = true;
-    $("callMsg").textContent = ""; $("trText").classList.add("hidden"); $("trText").textContent = "";
+    $("callMsg").textContent = "";
+    $("trText").classList.add("hidden");
+    $("trText").textContent = "";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   $("newCall").addEventListener("click", resetCall);
   $("clearCall").addEventListener("click", resetCall);
   $("trBtn").addEventListener("click", function () {
-    if (!call.uploaded) return;
-    var btn = $("trBtn"), sig = call.uploadedFor, t0 = Date.now();
+    if (!call.files.length || !call.files.some(function (f) { return !!f.uploaded; })) return;
+    var btn = $("trBtn"), t0 = Date.now();
     btn.disabled = true;
     var tm = setInterval(function () { $("trMsg").textContent = "Расшифровываю… " + Math.round((Date.now() - t0) / 1000) + " с"; }, 1000);
     $("trMsg").textContent = "Расшифровываю…";
-    api({ action: "transcript", code: state.code, file: call.uploaded }).then(function (j) {
-      if (call.uploadedFor !== sig) return;
+
+    api({
+      action: "transcript",
+      code: state.code,
+      mode: call.analysisMode,
+      files: call.files.map(function (item) {
+        return {
+          uri: item.uploaded.uri,
+          name: item.uploaded.name,
+          mime: item.uploaded.mime,
+          filename: item.file.name
+        };
+      })
+    }).then(function (j) {
       call.transcript = j.text;
       $("trText").textContent = j.text; $("trText").classList.remove("hidden");
       btn.classList.add("hidden");
-      $("trMsg").textContent = j.truncated ? "Запись длинная — расшифровка оборвалась на середине." : "Готово — расшифровка попадёт и в «Копировать», и в .md.";
+      $("trMsg").textContent = j.truncated ? "Записи длинные — расшифровка оборвалась на середине." : "Готово — расшифровка попадёт и в «Копировать», и в .md.";
     }).catch(function (e) {
       $("trMsg").textContent = e.message; btn.disabled = false;
     }).then(function () { clearInterval(tm); });
